@@ -8,13 +8,13 @@ st.set_page_config(page_title="Air Passenger Forecast",page_icon="✈️",layout
 
 @st.cache_resource
 def load_artifacts():
-    model=load_model("airpassenger_birnn.keras",compile=False)
+    model=load_model("airpassenger_bilstm.keras",compile=False)
     scaler=joblib.load("airpassenger_scaler.pkl")
     return model,scaler
 
 model,scaler=load_artifacts()
 
-st.title("✈️ Air Passenger Forecasting Using Bidirectional RNN")
+st.title("✈️ Air Passenger Forecasting Using Bidirectional LSTM")
 
 tab1,tab2=st.tabs(["Forecast","Model Information"])
 
@@ -51,12 +51,18 @@ with tab1:
                     future_passengers=[]
 
                     for _ in range(7):
+
                         x=np.array(last_12_months[-12:]).reshape(1,12,1)
+
                         pred=model.predict(x,verbose=0)[0][0]
+
                         future_passengers.append(pred)
+
                         last_12_months.append(pred)
 
-                    future_passengers=scaler.inverse_transform(np.array(future_passengers).reshape(-1,1))
+                    future_passengers=scaler.inverse_transform(
+                        np.array(future_passengers).reshape(-1,1)
+                    )
 
                     forecast_df=pd.DataFrame({
                         "Month":[f"Month {i}" for i in range(1,8)],
@@ -65,20 +71,25 @@ with tab1:
 
                     st.subheader("Next 7 Months Forecast")
 
-                    st.dataframe(forecast_df,use_container_width=True)
+                    st.dataframe(
+                        forecast_df,
+                        use_container_width=True
+                    )
 
-                    st.line_chart(forecast_df.set_index("Month"))
+                    st.line_chart(
+                        forecast_df.set_index("Month")
+                    )
 
 with tab2:
 
     st.markdown("""
-    ### Bidirectional RNN Architecture
+    ### Bidirectional LSTM Architecture
 
-    - Bidirectional SimpleRNN (64 Units)
+    - Bidirectional LSTM (64 Units)
     - Dropout (0.2)
-    - Bidirectional SimpleRNN (32 Units)
+    - Bidirectional LSTM (32 Units)
     - Dropout (0.2)
-    - Dense (16 Units)
+    - Dense (16 Units, ReLU)
     - Dense (1 Unit)
 
     ### Input
@@ -88,8 +99,14 @@ with tab2:
     Next 7 Months Passenger Forecast
 
     ### Algorithm
-    Bidirectional Recurrent Neural Network (BiRNN)
+    Bidirectional Long Short-Term Memory (BiLSTM)
 
     ### Problem Type
     Time Series Forecasting
+
+    ### Why BiLSTM?
+    - Captures long-term dependencies better than RNN
+    - Handles seasonal trends effectively
+    - Reduces vanishing gradient problems
+    - Produces more stable forecasts
     """)
